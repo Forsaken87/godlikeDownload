@@ -1,0 +1,101 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>dl.godlike.biz</title>
+		<!-- JQUERY & JQUERY UI -->
+		<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
+		<link media="all" type="text/css" href="css/custom-theme/jquery-ui-1.8.9.custom.css" rel="stylesheet">
+		<!-- NAVIGATION -->
+		<script>
+		function ShowNotice(text) {
+			var notice = $("#nav > .ui-state-highlight");
+			notice.html(text);
+			notice.clearQueue().delay(500).fadeIn().delay(5000).fadeOut();
+		}
+		
+		$(function() {
+			$("#LANG").buttonset();
+			$("#nav").tabs({
+			    select: function(event, ui) {
+			        var url = $.data(ui.tab, 'load.tabs');
+			        if( url ) {
+			            location.href = url;
+			            return false;
+			        }
+			        return true;
+			    },
+				ajaxOptions: {
+					error: function( xhr, status, index, anchor ) {
+						$( anchor.hash ).html("Fehler beim laden der Seite!");
+					}
+				},
+				selected: {nav_index}
+			});
+		});
+		</script>
+		<!-- CUSTOM STLYE FIXES -->
+		<style type="text/css">
+			#LANG label {
+				font-size: 12px;
+			}
+		
+			th {
+				text-align: left;
+			}
+
+			.animated {
+				background-image: url(img/pbar-ani.gif);
+			}
+			
+			.row0 {
+				background-color: #202020;
+			}
+			
+			.row1 {
+				background-color: #303030;
+			}
+			
+			.row0:hover, .row1:hover {
+				background-color: #404040;
+			}
+			
+			.pager_button span {
+				font-size: small;
+			}
+			
+			.pager_button_active {
+				opacity: 1 !important;
+			}
+			
+			.pager_button_active span {
+				color: black;
+				font-weight: bolder;
+			}
+			
+			.ui-autocomplete {
+				max-height: 240px;
+				overflow-y: auto;
+				/* prevent horizontal scrollbar */
+				overflow-x: hidden;
+				/* add padding to account for vertical scrollbar */
+				padding-right: 20px;
+			}
+		</style>
+	</head>
+	<body bgcolor="#000000">
+{infobar}
+		<div id="nav" style="position: fixed; top: 40px; left: 8px; bottom: 8px; right: 8px;">
+			<ul>
+{nav}
+			</ul>
+			<div id="active" style="position: absolute; top: 64px; left: 4px; bottom: 4px; right: 4px; padding: 4px; overflow: auto;">
+{content}
+			</div>
+			<div class="ui-state-highlight ui-corner-all" style="position: absolute; left: 8px; bottom: 8px; right: 8px; padding: 8px; display: none; z-index: 100;">
+				Ooops...
+			</div>
+		</div>
+	</body>
+</html>
