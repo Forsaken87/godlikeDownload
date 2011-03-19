@@ -128,7 +128,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 		}
 	?>
 </div>
-<div class="ui-widget ui-widget-content" style="position: absolute; left: 200px; right: 0px; top: 0px; bottom: 0px; overflow: auto;">
+<div class="ui-widget ui-widget-content" style="position: absolute; left: 200px; right: 0px; top: 0px; bottom: 0px; padding: 0px 8px; overflow: auto;">
 	<h1><?=utf8_encode(htmlspecialchars($ar_download['TITLE']))?></h1>
 
 	<?=utf8_encode(strip_tags($ar_download['DESC'], '<a><blockquote><br><div><img><p><strong><table><tbody><thead><tr><th><td>'))?>

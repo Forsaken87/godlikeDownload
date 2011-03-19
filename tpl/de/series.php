@@ -67,7 +67,7 @@ if (!empty($_REQUEST['id'])) {
 
 function UpdateFilter(input) {
 	$("a.seriesEntry").each(function() {
-		var title = $(this).children("div").html();
+		var title = $(this).children("div span:first").html();
 		if (title.toLowerCase().indexOf(input.value.toLowerCase()) >= 0) {
 			$(this).show();
 		} else {
@@ -97,10 +97,16 @@ function ShowSeries(id) {
 </div>
 <div class="ui-widget ui-widget-content" style="position: fixed; left: 16px; top: 128px; bottom: 16px; right: 75%; margin-right: 4px; overflow: auto;">
 	<?php
-		$query = "SELECT * FROM `category` WHERE FK_CATEGORY_GROUP=5 ORDER BY NAME ASC";
+		$query = "SELECT c.*, count(dc.FK_DOWNLOAD) AS DL_COUNT\n".
+			"FROM `category` c \n".
+			"	LEFT JOIN `download_cat` dc ON dc.FK_CATEGORY=c.ID_CATEGORY \n".
+			"WHERE c.FK_CATEGORY_GROUP=5\n".
+			"GROUP BY c.ID_CATEGORY ORDER BY c.NAME ASC";
 		$result = @mysql_query($query);
 		while ($row = @mysql_fetch_assoc($result)) {
-			include("series_row.php");
+			if ($row["DL_COUNT"] > 0) {
+				include("series_row.php");
+			}
 		}
 	?>
 </div>
