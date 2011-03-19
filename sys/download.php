@@ -53,39 +53,49 @@ function readMovieBlogPost($ar_post, $curPost) {
 	$list_div = $curPost->getElementsByTagName("div");
 	for ($i_div = 0; $i_div < $list_div->length; $i_div++) {
 		$cur_div = $list_div->item($i_div);
+		// Get description
 		$cur_class = $cur_div->attributes->getNamedItem("class");
 		if (($cur_class != null) && ($cur_class->nodeValue == "entry")) {
 			$curDesc = new DOMDocument();
 			$curDesc->appendChild( $curDesc->importNode($cur_div, true) );
 			$ar_post["DESC"] = utf8_decode($curDesc->saveHTML());
+			// Get Download links
+			$list_link = $cur_div->getElementsByTagName("a");
+			for ($i_link = 0; $i_link < $list_link->length; $i_link++) {
+				$cur_link = $list_link->item($i_link);
+				// Link url
+				$cur_link_url = $cur_link->attributes->getNamedItem("href");
+				if ($cur_link_url != null) {
+					if (!empty($cur_link->textContent)) {
+						if ((substr($cur_link_url->nodeValue, 0, 4) == "http") && !preg_match('/^http\:\/\/www\.movie-blog\.org\//i', $cur_link_url->nodeValue) &&
+							(strtolower(trim($cur_link_url->nodeValue)) != "imdb") && (strtolower(trim($cur_link_url->nodeValue)) != "nfo") &&
+							(strtolower(trim($cur_link_url->nodeValue)) != "anisearch") && (strtolower(trim($cur_link_url->nodeValue)) != "ofdb") &&
+							(strtolower(trim($cur_link_url->nodeValue)) != "screen") && (strtolower(trim($cur_link_url->nodeValue)) != "screens")) {
+							// Only external links
+							$ar_link = array(
+								"URL"	=> utf8_decode($cur_link_url->nodeValue),
+								"TITLE"	=> utf8_decode(trim($cur_link->textContent))
+							);
+							$ar_post["DOWNLOAD"][] = $ar_link;
+							if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
+							if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
+							if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
+							if (strpos(strtolower($ar_link["TITLE"]), "ul.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
+							if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
+							if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
+							if (strpos(strtolower($ar_link["TITLE"]), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");
+							if (strpos(strtolower($ar_link["TITLE"]), "hotfile") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Hotfile.com");
+							if (strpos(strtolower($ar_link["TITLE"]), "share-online") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Share-online.biz");
+							if (strpos(strtolower($ar_link["TITLE"]), "x7.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("x7.to");
+						}
+					}
+				}
+			}
 		}
 	}
 	$list_link = $curPost->getElementsByTagName("a");
 	for ($i_link = 0; $i_link < $list_link->length; $i_link++) {
 		$cur_link = $list_link->item($i_link);
-		// Link url
-		$cur_link_url = $cur_link->attributes->getNamedItem("href");
-		if ($cur_link_url != null) {
-			if (!empty($cur_link->textContent)) {
-				if ((substr($cur_link_url->nodeValue, 0, 4) == "http") && !preg_match('/^http\:\/\/www\.movie-blog\.org\//i', $cur_link_url->nodeValue)) {
-					// Only external links
-					$ar_link = array(
-						"URL"	=> utf8_decode($cur_link_url->nodeValue),
-						"TITLE"	=> utf8_decode(trim($cur_link->textContent))
-					);
-					$ar_post["DOWNLOAD"][] = $ar_link;
-					if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
-					if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
-					if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
-					if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
-					if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
-					if (strpos(strtolower($ar_link["TITLE"]), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");
-					if (strpos(strtolower($ar_link["TITLE"]), "hotfile") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Hotfile.com");
-					if (strpos(strtolower($ar_link["TITLE"]), "share-online") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Share-online.biz");
-					if (strpos(strtolower($ar_link["TITLE"]), "x7.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("x7.to");
-				}
-			}
-		}
 		$cur_rel = $cur_link->attributes->getNamedItem("rel");
 		if (($cur_rel != null) && ($cur_rel->nodeValue == "bookmark")) {
 			// Entry title
@@ -195,6 +205,7 @@ function readSerienJunkiesPost($ar_post, $curPost) {
 						$ar_post["DOWNLOAD"][] = $ar_link;
 						if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
 						if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
+						if (strpos(strtolower($ar_link["TITLE"]), "ul.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
 						if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
 						if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
 						if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
@@ -268,6 +279,7 @@ function readDreiPost($ar_post, $curPost) {
 			if (strpos(strtolower($infoText), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
 			if (strpos(strtolower($infoText), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
 			if (strpos(strtolower($infoText), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
+			if (strpos(strtolower($infoText), "ul.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
 			if (strpos(strtolower($infoText), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
 			if (strpos(strtolower($infoText), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
 			if (strpos(strtolower($infoText), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");
@@ -333,6 +345,7 @@ function readGWarezPost($ar_post, $curPost, $curl) {
 				if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
 				if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
 				if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
+				if (strpos(strtolower($ar_link["TITLE"]), "ul.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
 				if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
 				if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
 				if (strpos(strtolower($ar_link["TITLE"]), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");

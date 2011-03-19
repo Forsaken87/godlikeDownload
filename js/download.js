@@ -25,6 +25,13 @@ function UpdateJDStatus() {
 	});
 }
 
+function ProcessRegexpNow(id) {
+	var url = "index.php?run=settings&ajax=1&do=regexp&id="+encodeURIComponent(id);
+	$.get(url, function() {
+		document.location.reload();
+	});
+}
+
 function GetLinks(linkIds, captchaUrl, captchaIdent, captchaText) {
 	var url = "index.php?run=download&ajax=1&links="+encodeURIComponent(linkIds);
 	if ((captchaUrl != null) && (captchaText != null)) {

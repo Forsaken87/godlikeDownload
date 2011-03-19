@@ -17,7 +17,7 @@ class FilterSerienJunkies implements LinkFilter {
 	}
 
 	public function MatchLink($url) {
-		if (preg_match('/^http\:\/\/download\.serienjunkies\.org\/f\-/i', $url)) {
+		if (preg_match('/^http\:\/\/serienjunkies\.org\/safe\//i', $url)) {
 			return true;
 		}
 		return false;

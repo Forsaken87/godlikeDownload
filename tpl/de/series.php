@@ -14,7 +14,7 @@ if (!empty($_REQUEST['id'])) {
 		$queryLinks = "SELECT * FROM `download_link` l WHERE l.FK_DOWNLOAD=".$row["ID_DOWNLOAD"];
 		$resultLinks = @mysql_query($queryLinks);
 		while ($rowLink = @mysql_fetch_assoc($resultLinks)) {
-			$hoster = $rowLink["TITLE"];
+			$hoster = strtolower($rowLink["TITLE"]);
 			if (empty($row["LINKS"][$hoster])) {
 				// New hoster
 				$row["LINKS"][$hoster] = array();

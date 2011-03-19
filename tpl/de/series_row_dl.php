@@ -16,7 +16,7 @@
 					<td>
 					<?php
 						foreach ($row['LINKS'] as $hoster => $links) {
-							?><input type="button" style="width: 100px; font-size: 12px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
+							?><input type="button"  style="padding: 1px; font-size: 12px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
 						}
 					?>
 					</td>

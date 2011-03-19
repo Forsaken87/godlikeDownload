@@ -8,6 +8,14 @@ function get_query_field($query) {
 	return null;
 }
 
+function get_query_assoc($query) {
+	$result = @mysql_query($query);
+	if ($result && ($ar_row = @mysql_fetch_assoc($result))) {
+		return $ar_row;
+	}
+	return array();
+}
+
 function updateCategory($name, $id_group = 3) {
 	$query = "SELECT c.ID_CATEGORY FROM `category` c\n".
 		"LEFT JOIN `category_alias` a ON a.FK_CATEGORY=c.ID_CATEGORY\n".
@@ -29,6 +37,15 @@ function updateCategory($name, $id_group = 3) {
 }
 
 function updateDownload($ar_download) {
+	// Match category reg-exp's
+	$query = "SELECT c.NAME, r.REGEXP FROM `category_regexp` r LEFT JOIN `category` c ON c.ID_CATEGORY=r.FK_CATEGORY";
+	$result = @mysql_query($query);
+	while ($row = @mysql_fetch_assoc($result)) {
+		if (preg_match('/'.$row["REGEXP"].'/i', $ar_download["TITLE"])) {
+			$ar_download["CATEGORYS"][] = $row["NAME"];
+		}
+	}
+	// Insert download
 	$query = "INSERT INTO `download` (`URL`, `SOURCE`, `TITLE`, `DESC`, `STAMP_FOUND`, `STAMP_UPDATE`) ".
 		"VALUES ('".mysql_escape_string($ar_download['URL'])."', '".mysql_escape_string($ar_download['SOURCE'])."', ".
 			"'".mysql_escape_string($ar_download['TITLE'])."', '".mysql_escape_string($ar_download['DESC'])."', ".
