@@ -8,7 +8,7 @@ function get_query_field($query) {
 	return null;
 }
 
-function updateCategory($name) {
+function updateCategory($name, $id_group = 3) {
 	$query = "SELECT c.ID_CATEGORY FROM `category` c\n".
 		"LEFT JOIN `category_alias` a ON a.FK_CATEGORY=c.ID_CATEGORY\n".
 		"WHERE a.NAME LIKE '".mysql_escape_string($name)."' OR c.NAME LIKE '".mysql_escape_string($name)."'";
@@ -18,7 +18,7 @@ function updateCategory($name) {
 		if (!empty($ar_category)) {
 			return $ar_category["ID_CATEGORY"];
 		} else {
-			$query = "INSERT INTO `category` (`NAME`) VALUES ('".mysql_escape_string($name)."')";
+			$query = "INSERT INTO `category` (`NAME`, `FK_CATEGORY_GROUP`) VALUES ('".mysql_escape_string($name)."', ".$id_group.")";
 			if (mysql_query($query) !== false) {
 				return mysql_insert_id();
 			}
@@ -29,16 +29,17 @@ function updateCategory($name) {
 }
 
 function updateDownload($ar_download) {
-	$query = "INSERT INTO `download` (`URL`, `SOURCE`, `TITLE`, `DESC`, `STAMP_FOUND`) ".
+	$query = "INSERT INTO `download` (`URL`, `SOURCE`, `TITLE`, `DESC`, `STAMP_FOUND`, `STAMP_UPDATE`) ".
 		"VALUES ('".mysql_escape_string($ar_download['URL'])."', '".mysql_escape_string($ar_download['SOURCE'])."', ".
-		"'".mysql_escape_string($ar_download['TITLE'])."', '".mysql_escape_string($ar_download['DESC'])."', ".
-		(empty($ar_download["STAMP_FOUND"]) ? "CURDATE()" : "'".mysql_escape_string($ar_download["STAMP_FOUND"])."'").") ".
+			"'".mysql_escape_string($ar_download['TITLE'])."', '".mysql_escape_string($ar_download['DESC'])."', ".
+			(empty($ar_download["STAMP_FOUND"]) ? "CURDATE()" : "'".mysql_escape_string($ar_download["STAMP_FOUND"])."'").", ".
+			(empty($ar_download["DOWNLOAD"]) ? "NULL" : "NOW()").") ".
 		"ON DUPLICATE KEY UPDATE `TITLE`='".mysql_escape_string($ar_download['TITLE'])."', `DESC`='".mysql_escape_string($ar_download['DESC'])."', ".
-		"`STAMP_UPDATE`=".(empty($ar_download["DOWNLOAD"]) ? "NULL" : "NOW()").", `UPDATING`=0 ".
-		(!empty($ar_download["STAMP_FOUND"]) ? ", `STAMP_FOUND`='".mysql_escape_string($ar_download["STAMP_FOUND"])."'" : "");
+			"`STAMP_UPDATE`=".(empty($ar_download["DOWNLOAD"]) ? "NULL" : "NOW()").", `UPDATING`=0 ".
+			(!empty($ar_download["STAMP_FOUND"]) ? ", `STAMP_FOUND`='".mysql_escape_string($ar_download["STAMP_FOUND"])."'" : "");
 	$result = @mysql_query($query);
 	if ($result === false) {
-		die("DEBUG: Query failed! ".$query);
+		die("DEBUG: Query failed: ".$query);
 		return false;
 	} else {
 		if (mysql_affected_rows() > 0) {
@@ -59,14 +60,20 @@ function updateDownload($ar_download) {
 				if ($id_category != false) {
 					$query_category = "INSERT INTO `download_cat` (`FK_DOWNLOAD`, `FK_CATEGORY`) VALUES (".$id_download.", ".$id_category.")";
 					@mysql_query($query_category);
+					$query_category_links = "SELECT FK_CATEGORY_TO FROM `category_link` WHERE FK_CATEGORY=".$id_category;
+					$result_category_links = @mysql_query($query_category_links);
+					while ($ar_category_link = @mysql_fetch_row($result_category_links)) {
+						$query_category = "INSERT INTO `download_cat` (`FK_DOWNLOAD`, `FK_CATEGORY`) VALUES (".$id_download.", ".$ar_category_link[0].")";
+						@mysql_query($query_category);
+					}
 				}
 			}
 		}
 		if (!empty($ar_download["DOWNLOAD"])) {
 			foreach ($ar_download["DOWNLOAD"] as $index => $ar_link) {
-				$query_category = "INSERT INTO `download_link` (`FK_DOWNLOAD`, `URL`, `TITLE`) VALUES ".
-					"(".$id_download.", '".mysql_escape_string($ar_link['URL'])."', '".mysql_escape_string($ar_link['TITLE'])."')";
-				@mysql_query($query_category);
+				$query_link = "INSERT INTO `download_link` (`FK_DOWNLOAD`, `URL`, `TITLE`, `IS_CONTAINER`) VALUES ".
+					"(".$id_download.", '".mysql_escape_string($ar_link['URL'])."', '".mysql_escape_string($ar_link['TITLE'])."', ".($ar_link['IS_CONTAINER'] ? $ar_link['IS_CONTAINER'] : 0).")";
+				@mysql_query($query_link);
 			}
 		}
 		return $id_download;

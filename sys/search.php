@@ -173,7 +173,7 @@ function searchSerienJunkiesPost($curPost) {
 				// ERROR! Link not found!
 				return false;
 			}
-			$ar_post["URL"] = utf8_decode($cur_link_url->nodeValue);
+			$ar_post["URL"] = $cur_link_url->nodeValue;
 			$ar_post["TITLE"] = utf8_decode(str_replace(".", " ", $cur_link->textContent));
 		}
 	}
@@ -228,11 +228,9 @@ function searchSerienJunkiesStart($url) {
 							"COMMENTS"		=> array(),
 							"DOWNLOAD"		=> array()
 						);
-						if ($ar_post !== false) {
-							require_once 'sys/database.php';
-							$id_download = updateDownload($ar_post);
-							$ar_downloads[] = $id_download;
-						}
+						require_once 'sys/database.php';
+						$id_download = updateDownload($ar_post);
+						$ar_downloads[] = $id_download;
 					}
 				}
 			}

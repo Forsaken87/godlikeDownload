@@ -4,7 +4,7 @@
  * MOVIE-BLOG.ORG
  */
 
-function readMovieBlog($ar_download) {
+function readMovieBlog($ar_download, $resolver) {
 	$dom_result = new DOMDocument();
 	if (@$dom_result->loadHTMLFile($ar_download['URL'])) {
 		$ar_links = array();
@@ -16,6 +16,9 @@ function readMovieBlog($ar_download) {
 			$ar_download = readMovieBlogPost($ar_download, $curPost);
 			if ($ar_download !== false) {
 				require_once 'sys/database.php';
+				foreach ($ar_download['DOWNLOAD'] as $downloadIndex => $downloadRow) {
+					$ar_download['DOWNLOAD'][$downloadIndex]['IS_CONTAINER'] = ($resolver->MatchLink($downloadRow['URL']) ? 1 : 0);
+				}
 				$id_download = updateDownload($ar_download);
 				$ar_downloads[] = $id_download;
 			}
@@ -60,37 +63,35 @@ function readMovieBlogPost($ar_post, $curPost) {
 	$list_link = $curPost->getElementsByTagName("a");
 	for ($i_link = 0; $i_link < $list_link->length; $i_link++) {
 		$cur_link = $list_link->item($i_link);
+		// Link url
+		$cur_link_url = $cur_link->attributes->getNamedItem("href");
+		if ($cur_link_url != null) {
+			if (!empty($cur_link->textContent)) {
+				if ((substr($cur_link_url->nodeValue, 0, 4) == "http") && !preg_match('/^http\:\/\/www\.movie-blog\.org\//i', $cur_link_url->nodeValue)) {
+					// Only external links
+					$ar_link = array(
+						"URL"	=> utf8_decode($cur_link_url->nodeValue),
+						"TITLE"	=> utf8_decode(trim($cur_link->textContent))
+					);
+					$ar_post["DOWNLOAD"][] = $ar_link;
+					if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
+					if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
+					if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
+					if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
+					if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
+					if (strpos(strtolower($ar_link["TITLE"]), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");
+					if (strpos(strtolower($ar_link["TITLE"]), "hotfile") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Hotfile.com");
+					if (strpos(strtolower($ar_link["TITLE"]), "share-online") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Share-online.biz");
+					if (strpos(strtolower($ar_link["TITLE"]), "x7.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("x7.to");
+				}
+			}
+		}
 		$cur_rel = $cur_link->attributes->getNamedItem("rel");
 		if (($cur_rel != null) && ($cur_rel->nodeValue == "bookmark")) {
 			// Entry title
 			$cur_link_url = $cur_link->attributes->getNamedItem("href");
 			if ($cur_link_url != null) {
 				$ar_post["TITLE"] = utf8_decode(str_replace(".", " ", $cur_link->textContent));
-			}
-		}
-		$cur_target = $cur_link->attributes->getNamedItem("target");
-		if (($cur_target != null) && ($cur_target->nodeValue == "_blank")) {
-			// Entry title
-			$cur_link_url = $cur_link->attributes->getNamedItem("href");
-			if ($cur_link_url != null) {
-				if (!empty($cur_link->textContent)) {
-					if (!preg_match('/^http\:\/\/www\.movie-blog\.org\//i', $cur_link_url->nodeValue)) {
-						$ar_link = array(
-							"URL"	=> utf8_decode($cur_link_url->nodeValue),
-							"TITLE"	=> utf8_decode(trim($cur_link->textContent))
-						);
-						$ar_post["DOWNLOAD"][] = $ar_link;
-						if (strpos(strtolower($ar_link["TITLE"]), "rapidshare") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Rapidshare.com");
-						if (strpos(strtolower($ar_link["TITLE"]), "netload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Netload.in");
-						if (strpos(strtolower($ar_link["TITLE"]), "uploaded") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Uploaded.to");
-						if (strpos(strtolower($ar_link["TITLE"]), "megaupload") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Megaupload.com");
-						if (strpos(strtolower($ar_link["TITLE"]), "depositfiles") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Depositfiles.com");
-						if (strpos(strtolower($ar_link["TITLE"]), "filesonic") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Filesonic.com");
-						if (strpos(strtolower($ar_link["TITLE"]), "hotfile") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Hotfile.com");
-						if (strpos(strtolower($ar_link["TITLE"]), "share-online") !== false) $ar_post["CATEGORYS"][] = utf8_decode("Share-online.biz");
-						if (strpos(strtolower($ar_link["TITLE"]), "x7.to") !== false) $ar_post["CATEGORYS"][] = utf8_decode("x7.to");
-					}
-				}
 			}
 		}
 		if (($cur_rel != null) && ($cur_rel->nodeValue == "category tag")) {
@@ -105,24 +106,61 @@ function readMovieBlogPost($ar_post, $curPost) {
  * SERIENJUNKIES.ORG
  */
 
-function readSerienJunkies($ar_download) {
+function readSerienJunkies($ar_download, $resolver) {
 	$dom_result = new DOMDocument();
-	if (@$dom_result->loadHTMLFile($ar_download['URL'])) {
+	$source = file_get_contents($ar_download['URL']);
+	if (@$dom_result->loadHTML($source)) {
+		require_once 'sys/database.php';
 		$ar_links = array();
+		$ar_download_base = $ar_download;
+		$ar_download_base["CATEGORYS"] = array("Videos", "Serien");
 		$list_div = $dom_result->getElementsByTagName("div");
 		for ($i_div = 0; $i_div < $list_div->length; $i_div++) {
 			$cur_div = $list_div->item($i_div);
 			$cur_class = $cur_div->attributes->getNamedItem("class");
 			if ($cur_class != null) {
 				if ($cur_class->nodeValue == "post") {
-					// Post found, parse content
 					$curPost = new DOMDocument();
 					$curPost->appendChild( $curPost->importNode($cur_div, true) );
-					$ar_download = readSerienJunkiesPost($ar_download, $curPost);
-					if ($ar_download !== false) {
-						require_once 'sys/database.php';
-						$id_download = updateDownload($ar_download);
-						$ar_downloads[] = $id_download;
+					$list_link = $curPost->getElementsByTagName("a");
+					for ($i_link = 0; $i_link < $list_link->length; $i_link++) {
+						$cur_link = $list_link->item($i_link);
+						$cur_rel = $cur_link->attributes->getNamedItem("rel");
+						$cur_href = $cur_link->attributes->getNamedItem("href");
+						if (($cur_href != null) && ($cur_rel != null) && ($cur_rel->nodeValue == "bookmark")) {
+							$ar_download_base["URL"] = $cur_href->nodeValue;
+							$ar_title = explode(" ~ ", str_replace("?", "~", utf8_decode($cur_link->textContent)));
+							$ar_download_base["TITLE"] = $ar_title[0];
+							$ar_download_base["CATEGORYS"] = array("Videos", "Serien");
+							updateCategory($ar_download_base["TITLE"], 5);
+							$ar_download_base["CATEGORYS"][] = $ar_download_base["TITLE"];
+						}
+					}
+					$list_div2 = $curPost->getElementsByTagName("div");
+					for ($i_div2 = 0; $i_div2 < $list_div2->length; $i_div2++) {
+						$cur_div2 = $list_div2->item($i_div2);
+						$cur_class2 = $cur_div2->attributes->getNamedItem("class");
+						if ($cur_class2->nodeValue == "post-content") {
+							// Post found, parse content
+							$ar_download_base["DESC"] = utf8_decode($curPost->saveHTML());
+							$listP = $cur_div2->childNodes;
+							for ($i_p = 2; $i_p < $listP->length; $i_p++) {
+								$curP = $listP->item($i_p);
+								$curEp = new DOMDocument();
+								$curEp->appendChild( $curEp->importNode($curP, true) );
+								if (preg_match('/Download\:/i', $curP->textContent)) {
+									$ar_download = readSerienJunkiesPost($ar_download_base, $curEp);
+									$ar_download["URL"] .= "#".($i_p-1);
+									if (($ar_download !== false) && !empty($ar_download['DOWNLOAD'])) {
+										foreach ($ar_download['DOWNLOAD'] as $downloadIndex => $downloadRow) {
+											$ar_download['DOWNLOAD'][$downloadIndex]['IS_CONTAINER'] = ($resolver->MatchLink($downloadRow['URL']) ? 1 : 0);
+										}
+										$id_download = updateDownload($ar_download);
+										$ar_downloads[] = $id_download;
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -135,34 +173,21 @@ function readSerienJunkies($ar_download) {
 
 function readSerienJunkiesPost($ar_post, $curPost) {
 	$ar_post["DOWNLOAD"] = array();
-	$list_div = $curPost->getElementsByTagName("div");
-	for ($i_div = 0; $i_div < $list_div->length; $i_div++) {
-		$cur_div = $list_div->item($i_div);
-		$cur_class = $cur_div->attributes->getNamedItem("class");
-		if (($cur_class != null) && ($cur_class->nodeValue == "post-content")) {
-			$curDesc = new DOMDocument();
-			$curDesc->appendChild( $curDesc->importNode($cur_div, true) );
-			$ar_post["DESC"] = utf8_decode($curDesc->saveHTML());
-		}
+	$list_strong = $curPost->getElementsByTagName("strong");
+	if ($list_strong->length > 0) {
+		$ar_post["TITLE"] = $ar_post["TITLE"]." - ".utf8_decode(str_replace(".", " ", $list_strong->item(0)->textContent));
 	}
 	$list_link = $curPost->getElementsByTagName("a");
 	for ($i_link = 0; $i_link < $list_link->length; $i_link++) {
 		$cur_link = $list_link->item($i_link);
-		$cur_rel = $cur_link->attributes->getNamedItem("rel");
-		if (($cur_rel != null) && ($cur_rel->nodeValue == "bookmark")) {
-			// Entry title
-			$cur_link_url = $cur_link->attributes->getNamedItem("href");
-			if ($cur_link_url != null) {
-				$ar_post["TITLE"] = utf8_decode(str_replace(".", " ", $cur_link->textContent));
-			}
-		}
 		$cur_target = $cur_link->attributes->getNamedItem("target");
 		if (($cur_target != null) && ($cur_target->nodeValue == "_blank")) {
 			// Entry title
 			$cur_link_url = $cur_link->attributes->getNamedItem("href");
 			if ($cur_link_url != null) {
 				if (!empty($cur_link->textContent)) {
-					if (preg_match('/^http\:\/\/download\.serienjunkies\.org\/f\-/i', $cur_link_url->nodeValue)) {
+					if (preg_match('/^http\:\/\/download\.serienjunkies\.org\/f\-/i', $cur_link_url->nodeValue) ||
+						preg_match('/^http\:\/\/serienjunkies\.org\/safe\//i', $cur_link_url->nodeValue)) {
 						$ar_link = array(
 							"URL"	=> utf8_decode($cur_link_url->nodeValue),
 							"TITLE"	=> utf8_decode(trim(str_replace("| ", "", $cur_link->nextSibling->textContent)))
@@ -190,7 +215,7 @@ function readSerienJunkiesPost($ar_post, $curPost) {
  * DREI.TO
  */
 
-function readDrei($ar_download) {
+function readDrei($ar_download, $resolver) {
 	$dom_result = new DOMDocument();
 	if (@$dom_result->loadHTMLFile($ar_download['URL'])) {
 		$ar_links = array();
@@ -206,6 +231,9 @@ function readDrei($ar_download) {
 			);
 			if ($ar_download !== false) {
 				require_once 'sys/database.php';
+				foreach ($ar_download['DOWNLOAD'] as $downloadIndex => $downloadRow) {
+					$ar_download['DOWNLOAD'][$downloadIndex]['IS_CONTAINER'] = ($resolver->MatchLink($downloadRow['URL']) ? 1 : 0);
+				}
 				$id_download = updateDownload($ar_download);
 				$ar_downloads[] = $id_download;
 			}
@@ -255,7 +283,7 @@ function readDreiPost($ar_post, $curPost) {
  * GWAREZ.CC
  */
 
-function readGWarez($ar_download) {
+function readGWarez($ar_download, $resolver) {
 	$curl = curl_init($ar_download['URL']);
 	if ($curl !== false) {
 		curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
@@ -271,6 +299,9 @@ function readGWarez($ar_download) {
 				$ar_download = readGWarezPost($ar_download, $curPost, $curl);
 				if ($ar_download !== false) {
 					require_once 'sys/database.php';
+					foreach ($ar_download['DOWNLOAD'] as $downloadIndex => $downloadRow) {
+						$ar_download['DOWNLOAD'][$downloadIndex]['IS_CONTAINER'] = ($resolver->MatchLink($downloadRow['URL']) ? 1 : 0);
+					}
 					$id_download = updateDownload($ar_download);
 					$ar_downloads[] = $id_download;
 				}
@@ -283,6 +314,7 @@ function readGWarez($ar_download) {
 
 function readGWarezPost($ar_post, $curPost, $curl) {
 	$ar_post["DESC"] = $curPost->saveHtml();
+	$ar_post["CATEGORYS"][] = "Spiele";
 	$ar_post["DOWNLOAD"] = array();
 	$list_link = $curPost->getElementsByTagName("a");
 	for ($i_link = 0; $i_link < $list_link->length; $i_link++) {

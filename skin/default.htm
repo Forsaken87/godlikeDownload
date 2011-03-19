@@ -7,6 +7,8 @@
 		<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
 		<script type="text/javascript" src="js/jquery-ui-1.8.9.custom.min.js"></script>
 		<link media="all" type="text/css" href="css/custom-theme/jquery-ui-1.8.9.custom.css" rel="stylesheet">
+		<!-- DOWNLOAD SCRIPTS (CAPTCHA INPUT ...) -->
+		<script type="text/javascript" src="js/download.js"></script>
 		<!-- NAVIGATION -->
 		<script>
 		function ShowNotice(text) {
@@ -85,6 +87,8 @@
 		</style>
 	</head>
 	<body bgcolor="#000000">
+		<div id="modal_loading" style="display: none; z-index: 100; cursor: wait; position: fixed; left: 0; right: 0; top: 0; bottom: 0;"></div>
+		<div id="download_popup" style="display: none;"></div>
 {infobar}
 		<div id="nav" style="position: fixed; top: 40px; left: 8px; bottom: 8px; right: 8px;">
 			<ul>

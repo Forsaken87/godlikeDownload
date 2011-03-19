@@ -41,11 +41,12 @@ $(function() {
 			 $queryJoinIgnored .= "	LEFT JOIN `download_cat` dc2 ON d.ID_DOWNLOAD=dc2.FK_DOWNLOAD AND ".
 			 	"dc2.FK_CATEGORY NOT IN (".implode(",",$ar_cats_ignored).")\n".
 			 	"	LEFT JOIN `category` c2 ON c2.ID_CATEGORY=dc2.FK_CATEGORY AND c2.FK_CATEGORY_GROUP=2\n";
-			 $queryWhereIgnored = " WHERE dc1.FK_CATEGORY IS NULL AND dc2.FK_CATEGORY IS NOT NULL";
+			 $queryWhereIgnored = " AND dc1.FK_CATEGORY IS NULL AND dc2.FK_CATEGORY IS NOT NULL";
 		}
 		$query = 	"SELECT d.* \n".
 					"FROM `download` d\n".
-					$queryJoinIgnored.$queryWhereIgnored."\n".
+					$queryJoinIgnored."\n".
+					"WHERE d.STAMP_UPDATE IS NOT NULL".$queryWhereIgnored."\n".
 					"GROUP BY d.ID_DOWNLOAD\n".
 					"ORDER BY d.STAMP_FOUND DESC, d.STAMP_UPDATE DESC LIMIT ".(empty($_REQUEST['rows']) ? 15 : $_REQUEST['rows']);
 		if ($result = @mysql_query($query)) {

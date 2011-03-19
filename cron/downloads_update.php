@@ -44,21 +44,23 @@ if (!empty($deleteLinks)) {
 /*
  * UPDATE NEW DOWNLOADS
  */
-$query = "SELECT * FROM `download` WHERE `STAMP_UPDATE` IS NULL AND UPDATING=0 ORDER BY `STAMP_FOUND` DESC LIMIT 1";
+require_once "sys/resolve.php";
+$resolver = new LinkResolver();
+$query = "SELECT * FROM `download` WHERE `STAMP_UPDATE` IS NULL AND UPDATING=0 ORDER BY `STAMP_FOUND` DESC, ID_DOWNLOAD DESC LIMIT 1";
 for ($i = 0; $i < $count_max; $i++) {
 	if ($row = @mysql_fetch_assoc(@mysql_query($query))) {
 		@mysql_query("UPDATE `download` SET UPDATING=1 WHERE ID_DOWNLOAD=".$row["ID_DOWNLOAD"]);
 		if ($row['SOURCE'] == "movie-blog.org") {
-			readMovieBlog($row);
+			readMovieBlog($row, $resolver);
 		}
 		if ($row['SOURCE'] == "serienjunkies.org") {
-			readSerienJunkies($row);
+			readSerienJunkies($row, $resolver);
 		}
 		if ($row['SOURCE'] == "drei.to") {
-			readDrei($row);
+			readDrei($row, $resolver);
 		}
 		if ($row['SOURCE'] == "gwarez.cc") {
-			readGWarez($row);
+			readGWarez($row, $resolver);
 		}
 		$result = @mysql_query("DELETE FROM `download` WHERE `STAMP_UPDATE` IS NULL AND ID_DOWNLOAD=".$row["ID_DOWNLOAD"]);
 		if (@mysql_affected_rows() > 0) {
