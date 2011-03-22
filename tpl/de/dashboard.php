@@ -34,6 +34,7 @@ function UpdateDownloads() {
 	$.get(url, function(result) {
 		$("#downloads_new").html(result);
 	});
+	window.clearInterval(interval_update);
 }
 
 </script>

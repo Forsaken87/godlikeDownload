@@ -48,10 +48,10 @@ $(function() {
 		$query =	"SELECT d.*\n".
 					"FROM `download` d\n".
 					"	LEFT JOIN `download_cat` dc ON d.ID_DOWNLOAD=dc.FK_DOWNLOAD\n".
-					"WHERE d.STAMP_FOUND>DATE_SUB(CURDATE(), interval 1 day)".$queryWhereIgnored.
+					"WHERE d.STAMP_FOUND>DATE_SUB(CURDATE(), interval 3 day)".$queryWhereIgnored.
 					"GROUP BY d.ID_DOWNLOAD\n".
-					"ORDER BY d.STAMP_UPDATE DESC, d.STAMP_UPDATE DESC\n".
-					"LIMIT 100";
+					"ORDER BY d.STAMP_FOUND DESC, d.STAMP_UPDATE DESC\n".
+					"LIMIT 400";
 		if ($result = @mysql_query($query)) {
 			$count = get_query_field("SELECT FOUND_ROWS()");
 			$even = 0;

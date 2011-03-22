@@ -5,6 +5,13 @@ $filename = "cache/user_new/".$_SESSION['user']['ID_USER'].".htm";
 
 if (!file_exists($filename)) {
 	echo "<h1>Cache wird erzeugt, kann bis zu 10 Minuten dauern.</h1>";
+	?>
+	<script type="text/javascript">
+		window.setTimeout(function() {
+			UpdateDownloads();
+		}, 4000);
+	</script>
+	<?php
 } else {
 	echo(file_get_contents($filename));
 	?>
@@ -23,10 +30,6 @@ if (!file_exists($filename)) {
 				$("#downloads_update").html("Update in "+(minutes > 0 ? minutes+"Min. und " : "")+seconds+"Sek.");
 			}
 		}, 1000);
-
-		window.setTimeout(function() {
-			UpdateDownloads();
-		}, <?=(600 - (time() - filemtime($filename)))?>000);
 	</script>
 	<?php
 }

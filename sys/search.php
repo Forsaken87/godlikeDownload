@@ -190,7 +190,7 @@ function searchSerienJunkiesStart($url) {
 		$date_cur = date("Y-m-d");
 		$ar_downloads = array();
 		$list_fieldsets = $dom_result->getElementsByTagName("fieldset");
-		$i_fieldset_count = ($list_fieldsets->length < 3 ? $list_fieldsets->length : 3);
+		$i_fieldset_count = ($list_fieldsets->length < 2 ? $list_fieldsets->length : 2);
 		for ($i_fieldset = 0; $i_fieldset < $i_fieldset_count; $i_fieldset++) {
 			$cur_fieldset = $list_fieldsets->item($i_fieldset);
 			$curPost = new DOMDocument();
@@ -218,7 +218,7 @@ function searchSerienJunkiesStart($url) {
 					if (preg_match('/^http\:\/\/serienjunkies.org\/serie\//i', $cur_href->nodeValue)) {
 						// Post found, parse content
 						$ar_post = array(
-							"URL"			=> $cur_href->nodeValue,
+							"URL"			=> $cur_href->nodeValue."#".$i_link,	// TODO: Currently required to update the STAMP_FOUND for all new episodes of a series, do it with one parsing!
 							"TITLE"			=> utf8_decode(str_replace(".", " ", $cur_link->textContent)),
 							"SOURCE"		=> "serienjunkies.org",
 							"STAMP_FOUND"	=> $date_cur,
