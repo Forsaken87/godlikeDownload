@@ -124,6 +124,7 @@ function readSerienJunkies($ar_download, $resolver) {
 		$ar_links = array();
 		$ar_download_base = $ar_download;
 		$ar_download_base["CATEGORYS"] = array("Videos", "Serien");
+		$ar_download_base["TITLE_ORG"] = $ar_download_base["TITLE"];
 		$list_div = $dom_result->getElementsByTagName("div");
 		for ($i_div = 0; $i_div < $list_div->length; $i_div++) {
 			$cur_div = $list_div->item($i_div);
@@ -185,7 +186,11 @@ function readSerienJunkiesPost($ar_post, $curPost) {
 	$ar_post["DOWNLOAD"] = array();
 	$list_strong = $curPost->getElementsByTagName("strong");
 	if ($list_strong->length > 0) {
+		$title_ep = utf8_decode(str_replace(".", " ", $list_strong->item(0)->textContent));
 		$ar_post["TITLE"] = $ar_post["TITLE"]." - ".utf8_decode(str_replace(".", " ", $list_strong->item(0)->textContent));
+		//die($ar_post["TITLE_ORG"]);
+		if ($ar_post["TITLE_ORG"] != $title_ep)
+			unset($ar_post["STAMP_FOUND"]);
 	}
 	$list_link = $curPost->getElementsByTagName("a");
 	for ($i_link = 0; $i_link < $list_link->length; $i_link++) {

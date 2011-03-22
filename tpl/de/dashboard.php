@@ -29,6 +29,7 @@ function UpdateDownloads() {
 	// Calculate an secure number of characters available for the title
 	var title_len = Math.floor(($("#downloads_new").width() - 320) / 9);
 	$("#downloads_new").html("Wird geladen...");
+	$("#downloads_update").html("Lade ...");
 	var url = "index.php?run=ajax_downloads_new&ajax=1&rows="+row_count+"&length="+title_len;
 	$.get(url, function(result) {
 		$("#downloads_new").html(result);
@@ -45,9 +46,7 @@ function UpdateDownloads() {
 	<div class="ui-widget ui-widget-content" style="position: absolute; left: 4px; top: 4px; bottom: 4px; right: 50%;">
 		<div class="ui-widget-header" style="font-weight: bold; font-size: 20px;">
 			Neue Downloads
-			<a id="downloads_update" style="float: right; padding: 2px;" title="Neu laden" onclick="UpdateDownloads();">
-				<span class="ui-icon ui-icon-arrowrefresh-1-e"></span>
-			</a>
+			<a id="downloads_update" style="float: right; padding: 2px; font-size: 15px;" title="Neu laden" onclick="UpdateDownloads();">Lade ...</a>
 		</div>
 		<div id="downloads_new" style="position: absolute; left: 4px; top: 32px; bottom: 4px; right: 4px; overflow: auto;">
 		</div>
