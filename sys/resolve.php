@@ -108,7 +108,10 @@ class LinkResolver {
 						$arLinksResolved = $filter->ParseLink($urlCur);
 						if (is_array($arLinksResolved)) {
 							// Add resolved one's
-							$arLinksNew = array_merge($arLinksNew, $arLinksResolved);
+							foreach ($arLinksResolved as $url) {
+								$urlTrim = trim($url);
+								if (!empty($urlTrim)) $arLinksNew[] = $urlTrim;
+							}
 						} else {
 							// Captcha found
 							return $arLinksResolved;
@@ -135,11 +138,20 @@ class LinkResolver {
 	 */
 	public function SubmitCaptcha($urlReferer, $url, $captchaIdent, $captchaText) {
 		foreach ($this->arFilter as $filter) {
-			if ($filter->MatchLink($url)) {
-				return $filter->SubmitCaptcha($urlReferer, $url, $captchaIdent, $captchaText);
+			if ($filter->MatchLink($urlReferer)) {
+				$arLinksResolved = $filter->SubmitCaptcha($urlReferer, $url, $captchaIdent, $captchaText);
+				if (is_array($arLinksResolved)) {
+					// Add resolved urls (if available)
+					$arLinksNew = array();
+					foreach ($arLinksResolved as $url) {
+						$urlTrim = trim($url);
+						if (!empty($urlTrim)) $arLinksNew[] = $urlTrim;
+					}
+					return $arLinksNew;
+				}
 			}
 		}
-		return array($url);
+		return array($urlReferer);
 	}
 }
 

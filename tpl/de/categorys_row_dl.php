@@ -22,7 +22,7 @@
 					$first = true;
 					while($cat = @mysql_fetch_assoc($result_cat)) {
 						?>
-						<a class="ui-state-highlight" style="padding: 1px 2px; margin-right: 1px;" href="index.php?categorys&cat=<?=$cat['ID_CATEGORY']?>"><?=utf8_encode(htmlspecialchars($cat['NAME']))?></a>
+						<a class="ui-state-highlight" style="padding: 1px 2px; margin-right: 1px;" href="index.php?show=categorys&cat=<?=$cat['ID_CATEGORY']?>"><?=utf8_encode(htmlspecialchars($cat['NAME']))?></a>
 						<?php
 					}
 				}

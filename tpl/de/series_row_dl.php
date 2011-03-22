@@ -1,4 +1,12 @@
 				<tr>
+					<td style="padding-left: 4px;">
+					<?php
+					if ($row['SOURCE'] == "movie-blog.org") echo("<img src='img/movieblog.png' title='movie-blog.org' />");
+					if ($row['SOURCE'] == "serienjunkies.org") echo("<img src='img/serienjunkies.png' title='serienjunkies.org' />");
+					if ($row['SOURCE'] == "drei.to") echo("<img src='img/drei.png' title='drei.to' />");
+					if ($row['SOURCE'] == "gwarez.cc") echo("<img src='img/gwarez.png' title='gwarez.cc' />");
+					?>
+					</td>
 					<td style="font-size: 14px;">
 						<?php
 						if (isMod()) {
@@ -16,7 +24,7 @@
 					<td>
 					<?php
 						foreach ($row['LINKS'] as $hoster => $links) {
-							?><input type="button"  style="padding: 1px; font-size: 12px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
+							?><input class="cnlLink" type="button"  style="padding: 1px; font-size: 12px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
 						}
 					?>
 					</td>

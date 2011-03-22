@@ -8,6 +8,18 @@ function get_query_field($query) {
 	return null;
 }
 
+function get_query_fields($query) {
+	$result = @mysql_query($query);
+	if ($result) {
+		$ar_results = array();
+		while ($ar_row = @mysql_fetch_row($result)) {
+			$ar_results[] = $ar_row[0];
+		}
+		return $ar_results;
+	}
+	return array();
+}
+
 function get_query_assoc($query) {
 	$result = @mysql_query($query);
 	if ($result && ($ar_row = @mysql_fetch_assoc($result))) {

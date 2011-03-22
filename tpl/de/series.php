@@ -5,7 +5,7 @@ if (!empty($_REQUEST['id'])) {
 	$query = 	"SELECT d.* FROM `download` d\n".
 				"	LEFT JOIN `download_cat` dc ON d.ID_DOWNLOAD=dc.FK_DOWNLOAD\n".
 				"WHERE dc.FK_CATEGORY=".(int)$_REQUEST['id']."\n".
-				"ORDER BY d.TITLE ASC";
+				"ORDER BY d.SOURCE ASC, d.STAMP_FOUND DESC, d.TITLE DESC";
 	$result = @mysql_query($query);
 	$arDownloads = array();
 	$arLinks = array();
@@ -31,10 +31,10 @@ if (!empty($_REQUEST['id'])) {
 	?>
 	<div align="center">
 		<div class="ui-widget ui-widget-content" align="center">
-			<h1>Click'n'Load - Alle Staffeln und Folgen</h1>
+			<h1>Click'n'Load - Alle Staffeln, Folgen und Extras</h1>
 			<?php
 			foreach ($arLinks as $hoster => $links) {
-				?><input type="button" style="width: 200px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
+				?><input class="cnlLink" type="button" style="width: 200px;" onclick="GetLinks('<?=implode(",",$links)?>');" value="<?=$hoster?>" /><?php
 			}
 			?>
 			<br />
@@ -44,6 +44,7 @@ if (!empty($_REQUEST['id'])) {
 		<table width="100%" class="ui-widget ui-widget-content" cellpadding="0" cellspacing="0">
 			<thead>
 				<tr class="ui-widget-header">
+					<th></th>
 					<th>Folge</th>
 					<th>Download</th>
 				</tr>
@@ -65,15 +66,30 @@ if (!empty($_REQUEST['id'])) {
 ?>
 <script type="text/javascript">
 
+var last_search = "";
+
 function UpdateFilter(input) {
-	$("a.seriesEntry").each(function() {
-		var title = $(this).children("div span:first").html();
-		if (title.toLowerCase().indexOf(input.value.toLowerCase()) >= 0) {
-			$(this).show();
-		} else {
-			$(this).hide();
-		}
-	});
+	var search = input.value.toLowerCase();
+	if (last_search.length < search.length) {
+		$("#series_list a.seriesEntry:visible").each(function() {
+			var title = $(this).children("div span:first").html().toLowerCase();
+			if (title.indexOf(search) >= 0) {
+				$(this).show();
+			} else {
+				$(this).hide();
+			}
+		});
+	} else if (search != last_search) {
+		$("#series_list a.seriesEntry").each(function() {
+			var title = $(this).children("div span:first").html().toLowerCase();
+			if (title.indexOf(search) >= 0) {
+				$(this).show();
+			} else {
+				$(this).hide();
+			}
+		});
+	}
+	last_search = search;
 }
 
 function UpdateManualSeries(idDownload, id) {
@@ -95,7 +111,7 @@ function ShowSeries(id) {
 <div class="ui-widget-header" style="position: fixed; left: 16px; top: 96px; height: 32px; right: 75%; margin-right: 4px;" align="center">
 	<input style="width: 99%;" onkeyup="UpdateFilter(this);" id="series_filter" placeholder="Suchen ..." />
 </div>
-<div class="ui-widget ui-widget-content" style="position: fixed; left: 16px; top: 128px; bottom: 16px; right: 75%; margin-right: 4px; overflow: auto;">
+<div id="series_list" class="ui-widget ui-widget-content" style="position: fixed; left: 16px; top: 128px; bottom: 16px; right: 75%; margin-right: 4px; overflow: auto;">
 	<?php
 		$query = "SELECT c.*, count(dc.FK_DOWNLOAD) AS DL_COUNT\n".
 			"FROM `category` c \n".

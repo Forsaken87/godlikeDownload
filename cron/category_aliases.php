@@ -1,5 +1,11 @@
 <?php
 
+
+$alias_interval = 5; // Minutes
+$last_alias = @file_get_contents("dl_cat_alias.lock");
+if (($last_alias === false) || ((time() - $last_alias) > (60 * $alias_interval)))
+	file_put_contents("dl_cat_alias.lock", time());
+
 $query = "SELECT a.*, c.ID_CATEGORY FROM `category` c\n".
 	"	RIGHT JOIN `category_alias` a ON c.NAME=a.NAME\n".
 	"GROUP BY a.ID_CATEGORY_ALIAS";

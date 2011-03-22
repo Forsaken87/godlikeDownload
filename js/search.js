@@ -33,10 +33,15 @@ function SendSearch(searchPage) {
 }
 
 function StartSearch(searchText, searchCat, searchPage) {
+	// Calculate number of rows fitting on screen
+	var row_count = Math.floor(($("#dl_search_result").parent().height() - 128) / 24);
+	// Calculate an secure number of characters available for the title
+	var title_len = Math.floor(($("#dl_search_result").parent().width() - 580) / 9);
 	var cat = "&cat="+(searchCat != null ? encodeURIComponent(searchCat) : "");
 	var page = "&page="+(searchPage != null ? encodeURIComponent(searchPage) : 1);
+	var url = "index.php?run=search_ajax&ajax=1&rows="+row_count+"&length="+title_len+"&q="+encodeURIComponent(searchText)+cat+page;
 	$("#dl_search_result").html('<div class="ui-state-highlight">Suche l&auml;uft ...</div>');
-	$("#dl_search_result").load("index.php?run=search_ajax&ajax=1&q="+encodeURIComponent(searchText)+cat+page);
+	$("#dl_search_result").load(url);
 }
 
 function UpdateManual(idDownload, curPage) {

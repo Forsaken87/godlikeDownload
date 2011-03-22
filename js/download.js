@@ -1,14 +1,9 @@
-jdownloader = false;
-
 $(function() {
 	UpdateJDStatus();
-	window.setInterval(function() {
-		UpdateJDStatus();
-	}, 10000);
 });
 
 function CheckJD(link) {
-	if (jdownloader) {
+	if (!jdownloader) {
 		$(link).css("color", "red");
 	} else {
 		$(link).css("color", "");
@@ -16,19 +11,26 @@ function CheckJD(link) {
 }
 
 function UpdateJDStatus() {
-	$.get("http://127.0.0.1:9666/flash/", function(result) {
-		if (result == "JDownloader") {
-			jdownloader = true;
-		} else {
-			jdownloader = false;
-		}
-	});
+	if (jdownloader) {
+		$(".cnlWarning").hide();
+	} else {
+		$(".cnlLink").css("color", "red");
+	}
 }
 
 function ProcessRegexpNow(id) {
 	var url = "index.php?run=settings&ajax=1&do=regexp&id="+encodeURIComponent(id);
+	$("#modal_loading").show();
 	$.get(url, function() {
-		document.location.reload();
+		$("#modal_loading").hide();
+	});
+}
+
+function ProcessCatLinkNow(id) {
+	var url = "index.php?run=settings&ajax=1&do=catlinks&id="+encodeURIComponent(id);
+	$("#modal_loading").show();
+	$.get(url, function() {
+		$("#modal_loading").hide();
 	});
 }
 

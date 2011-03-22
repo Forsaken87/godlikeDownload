@@ -190,7 +190,7 @@ function searchSerienJunkiesStart($url) {
 		$date_cur = date("Y-m-d");
 		$ar_downloads = array();
 		$list_fieldsets = $dom_result->getElementsByTagName("fieldset");
-		$i_fieldset_count = ($list_fieldsets->length < 2 ? $list_fieldsets->length : 2);
+		$i_fieldset_count = ($list_fieldsets->length < 3 ? $list_fieldsets->length : 3);
 		for ($i_fieldset = 0; $i_fieldset < $i_fieldset_count; $i_fieldset++) {
 			$cur_fieldset = $list_fieldsets->item($i_fieldset);
 			$curPost = new DOMDocument();

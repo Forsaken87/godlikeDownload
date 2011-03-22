@@ -1,7 +1,5 @@
 <?php
 
-require_once 'sys/search.php';
-
 $query = "SELECT * FROM `search_url` WHERE STAMP IS NULL OR STAMP<DATE_SUB(NOW(), interval 30 minute) LIMIT 2";
 $result = @mysql_query($query);
 while ($ar_search = @mysql_fetch_assoc($result)) {
@@ -11,6 +9,7 @@ while ($ar_search = @mysql_fetch_assoc($result)) {
 			$search_results = searchMovieBlog($ar_search['URL']);
 			break;
 		case 'serienjunkies.org':
+			@mysql_query('UPDATE `download` SET STAMP_FOUND=DATE_SUB(CURDATE(), interval 4 day) WHERE STAMP_FOUND=CURDATE() AND SOURCE="serienjunkies.org"');
 			$search_results = searchSerienJunkiesStart($ar_search['URL']);
 			break;
 		case 'drei.to':
@@ -28,7 +27,7 @@ while ($ar_search = @mysql_fetch_assoc($result)) {
 		"ON DUPLICATE KEY UPDATE `STAMP`=NOW(), `RESULTS`='".mysql_escape_string($downloads)."'");
 }
 
-$query = "SELECT * FROM `search` WHERE STAMP IS NULL OR STAMP<DATE_SUB(NOW(), interval 1 day) LIMIT 2";
+$query = "SELECT * FROM `search` WHERE STAMP IS NULL OR STAMP<DATE_SUB(NOW(), interval 7 day) LIMIT 2";
 $result = @mysql_query($query);
 while ($ar_search = @mysql_fetch_assoc($result)) {
 	$cur_results = array();

@@ -26,25 +26,33 @@ if (!empty($_REQUEST['links'])) {
 				} else {
 					$resolvedUrls = $resolver->ParseLink($row["URL"]);
 				}
-				if (is_array($resolvedUrls)) {
-					$arLinks = array_merge($arLinks, $resolvedUrls);
-					if ($resolvedUrls[0] != $row["URL"]) {
-						// Reolved to a new links
-						if (!in_array($row["ID_DOWNLOAD_LINK"], $arContainers)) {
-							$arContainers[] = $row["ID_DOWNLOAD_LINK"];
-							$query = "UPDATE `download_link` SET IS_CONTAINER=1 WHERE ID_DOWNLOAD_LINK=".$row["ID_DOWNLOAD_LINK"];
-							@mysql_query($query);
-							$query = "DELETE FROM `download_container` WHERE FK_DOWNLOAD_LINK=".$row["ID_DOWNLOAD_LINK"].")";
-							@mysql_query($query);
-						}
-						foreach ($resolvedUrls as $url) {
-							$query = "INSERT INTO `download_container` (FK_DOWNLOAD_LINK, URL) VALUES (".$row["ID_DOWNLOAD_LINK"].", '".mysql_escape_string($url)."')";
-							@mysql_query($query);
+				if (is_array($resolvedUrls) && !$row["IS_OFFLINE"]) {
+					if (empty($resolvedUrls)) {
+						$query = "UPDATE `download_link` SET IS_OFFLINE=1 WHERE ID_DOWNLOAD_LINK=".$row["ID_DOWNLOAD_LINK"];
+						@mysql_query($query);
+					} else {
+						$arLinks = array_merge($arLinks, $resolvedUrls);
+						if ($resolvedUrls[0] != $row["URL"]) {
+							// Reolved to a new links
+							if (!in_array($row["ID_DOWNLOAD_LINK"], $arContainers)) {
+								$arContainers[] = $row["ID_DOWNLOAD_LINK"];
+								$query = "UPDATE `download_link` SET IS_CONTAINER=1 WHERE ID_DOWNLOAD_LINK=".$row["ID_DOWNLOAD_LINK"];
+								@mysql_query($query);
+								$query = "DELETE FROM `download_container` WHERE FK_DOWNLOAD_LINK=".$row["ID_DOWNLOAD_LINK"].")";
+								@mysql_query($query);
+							}
+							foreach ($resolvedUrls as $url) {
+								$query = "INSERT INTO `download_container` (FK_DOWNLOAD_LINK, URL) VALUES (".$row["ID_DOWNLOAD_LINK"].", '".mysql_escape_string($url)."')";
+								@mysql_query($query);
+							}
 						}
 					}
-				} else {
+				} else if (!$row["IS_OFFLINE"]) {
 					// Missing captcha
 					die($resolvedUrls);
+				} else {
+					// Add original link?
+					$arLinks[] = $row["URL"];
 				}
 			}
 		}
@@ -62,6 +70,11 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 	require_once 'sys/download.php';
 	require_once "sys/resolve.php";
 	$resolver = new LinkResolver();
+	$ar_download["CATEGORY"] = array();
+	$result = @mysql_query("SELECT c.* FROM `category` c, `download_cat` d WHERE c.ID_CATEGORY=d.FK_CATEGORY AND d.FK_DOWNLOAD=".$ar_download['ID_DOWNLOAD']);
+	while ($ar_category = @mysql_fetch_assoc($result)) {
+		$ar_download["CATEGORY"][] = $ar_category;
+	}
 	if ($ar_download['SOURCE'] == "movie-blog.org") {
 		$ar_download = readMovieBlog($ar_download, $resolver);
 	}
@@ -80,7 +93,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 		$ar_download["CATEGORY"][] = $ar_category;
 	}
 	$ar_download["DOWNLOAD"] = array();
-	$result = @mysql_query("SELECT * FROM `download_link` WHERE FK_DOWNLOAD=".$ar_download['ID_DOWNLOAD']." GROUP BY `TITLE`");
+	$result = @mysql_query("SELECT *, sum(IS_OFFLINE) AS LINKS_OFFLINE, count(ID_DOWNLOAD_LINK) AS LINKS_ALL FROM `download_link` WHERE FK_DOWNLOAD=".$ar_download['ID_DOWNLOAD']." GROUP BY `TITLE`");
 	while ($ar_link = @mysql_fetch_assoc($result)) {
 		$ar_download["DOWNLOAD"][] = $ar_link;
 	}
@@ -91,7 +104,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 		$ar_download["CATEGORY"][] = $ar_category;
 	}
 	$ar_download["DOWNLOAD"] = array();
-	$result = @mysql_query("SELECT * FROM `download_link` WHERE FK_DOWNLOAD=".$ar_download['ID_DOWNLOAD']." GROUP BY `TITLE`");
+	$result = @mysql_query("SELECT *, sum(IS_OFFLINE) AS LINKS_OFFLINE, count(ID_DOWNLOAD_LINK) AS LINKS_ALL FROM `download_link` WHERE FK_DOWNLOAD=".$ar_download['ID_DOWNLOAD']." GROUP BY `TITLE`");
 	while ($ar_link = @mysql_fetch_assoc($result)) {
 		$ar_download["DOWNLOAD"][] = $ar_link;
 	}
@@ -101,7 +114,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 
 
 </script>
-<div class="ui-widget ui-widget-content" style="position: absolute; left: 0px; width: 200px; top: 0px; bottom: 0px;">
+<div class="ui-widget" style="position: absolute; left: 0px; width: 200px; top: 0px; bottom: 0px;">
 	<iframe id="hidden" name="hidden" style="display: none;"></iframe>
 	<div class="ui-widget-header">
 		Quelle
@@ -111,6 +124,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 			Quelle öffnen
 		</a>
 	</div>
+	<br />
 	<div class="ui-widget-header">
 		Click'n'load
 	</div>
@@ -119,6 +133,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 			include 'download_row.php';
 		}
 	?>
+	<br />
 	<div class="ui-widget-header">
 		Kategorien
 	</div>
@@ -128,7 +143,7 @@ if (($ar_download['STAMP_UPDATE'] == null) || ($_REQUEST["force"])) {
 		}
 	?>
 </div>
-<div class="ui-widget ui-widget-content" style="position: absolute; left: 200px; right: 0px; top: 0px; bottom: 0px; padding: 0px 8px; overflow: auto;">
+<div class="ui-widget ui-widget-content" style="position: absolute; left: 204px; right: 0px; top: 0px; bottom: 0px; padding: 0px 8px; overflow: auto;">
 	<h1><?=utf8_encode(htmlspecialchars($ar_download['TITLE']))?></h1>
 
 	<?=utf8_encode(strip_tags($ar_download['DESC'], '<a><blockquote><br><div><img><p><strong><table><tbody><thead><tr><th><td>'))?>

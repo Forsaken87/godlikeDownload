@@ -24,6 +24,19 @@ if (!empty($_REQUEST['do'])) {
 				@mysql_query($query);
 			}
 			die("OK");
+		case "catlinks";
+			$cats_target = get_query_fields("SELECT FK_CATEGORY_TO FROM `category_regexp` WHERE FK_CATEGORY=".(int)$_REQUEST['id']);
+			$query = "SELECT d.ID_DOWNLOAD FROM `download` d\n".
+				"	LEFT JOIN `download_cat` c ON c.FK_DOWNLOAD=d.ID_DOWNLOAD\n".
+				"WHERE c.FK_CATEGORY=".(int)$_REQUEST['id'];
+			$result = @mysql_query($query);
+			while ($arDownload = @mysql_fetch_row($result)) {
+				foreach ($cats_target as $id_category_target) {
+					$query = "INSERT INTO `download_cat` (FK_DOWNLOAD, FK_CATEGORY) VALUES (".$arDownload[0].", ".$id_category_target.")";
+					@mysql_query($query);
+				}
+			}
+			die("OK");
 	}
 	die("FAIL");
 }
@@ -44,7 +57,7 @@ function ChangeCategory(button) {
 </script>
 
 <h2>Neue Downloads aus folgenden Kategorien werden auf dem Dashboard angezeigt:</h2>
-<div class="ui-widget ui-widget-content" align="center" style="padding: 4px;">
+<div style="padding: 4px;">
 <?php
 	$ar_categorys_ignored = array();
 	$query = "SELECT * FROM `user_ignore` WHERE FK_USER=".$_SESSION['user']['ID_USER'];
@@ -81,7 +94,7 @@ function ChangeCategory(button) {
 if (isAdmin()) {
 	?>
 	<h2>Reguläre-Ausdrücke zum zuordnen der Kategorien anhand des Titels:</h2>
-	<div class="ui-widget ui-widget-content" align="center" style="padding: 4px; height: 320px; overflow: auto;">
+	<div align="center" style="padding: 4px; height: 200px; overflow: auto;">
 		<table style="border: 1px solid black; width: 100%;" cellpadding="0" cellspacing="0">
 			<thead>
 				<tr class="ui-widget-header">
@@ -94,13 +107,40 @@ if (isAdmin()) {
 			<?php
 				$query = "SELECT c.NAME, r.* FROM `category` c \n".
 					"	RIGHT JOIN `category_regexp` r ON c.ID_CATEGORY=r.FK_CATEGORY \n".
-					"ORDER BY c.FK_CATEGORY_GROUP ASC, c.NAME ASC";
+					"ORDER BY c.NAME ASC";
 				$result = @mysql_query($query);
 				$even = 0;
 				while ($row = @mysql_fetch_assoc($result)) {
 					$row["EVEN"] = $even;
 					$even = abs($even-1);
 					include 'settings_regexp_row.php';
+				}
+			?>
+			</tbody>
+		</table>
+	</div>
+	<h2>Verknüpfte Kategorien:</h2>
+	<div align="center" style="padding: 4px; height: 200px; overflow: auto;">
+		<table style="border: 1px solid black; width: 100%;" cellpadding="0" cellspacing="0">
+			<thead>
+				<tr class="ui-widget-header">
+					<th>Kategorie</th>
+					<th>Verweist auf</th>
+					<th>Aktionen</th>
+				</tr>
+			</thead>
+			<tbody>
+			<?php
+				$query = "SELECT c.NAME, ct.NAME as NAME_TO, l.* FROM `category_link` l \n".
+					"	LEFT JOIN `category` c ON l.FK_CATEGORY=c.ID_CATEGORY \n".
+					"	LEFT JOIN `category` ct ON l.FK_CATEGORY_TO=ct.ID_CATEGORY \n".
+					"ORDER BY c.NAME ASC";
+				$result = @mysql_query($query);
+				$even = 0;
+				while ($row = @mysql_fetch_assoc($result)) {
+					$row["EVEN"] = $even;
+					$even = abs($even-1);
+					include 'settings_link_row.php';
 				}
 			?>
 			</tbody>

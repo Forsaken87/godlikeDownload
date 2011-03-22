@@ -3,10 +3,16 @@ if (!isUser()) die(header("location: index.php?show=login"));
 
 require_once 'sys/search.php';
 
+if (!empty($_SESSION["LAST_SEARCH"]) && ((time() - $_SESSION["LAST_SEARCH"]) > 60)) {
+	$_SESSION["CUR_SEARCH"] = "";
+	$_SESSION["CUR_SEARCH_CAT"] = "";
+}
+
 $searchText = (isset($_REQUEST["q"]) ? trim($_REQUEST["q"]) : $_SESSION["CUR_SEARCH"]);
 $searchCat = (isset($_REQUEST["cat"]) ? trim($_REQUEST["cat"]) : $_SESSION["CUR_SEARCH_CAT"]);
 $_SESSION["CUR_SEARCH"] = $searchText;
 $_SESSION["CUR_SEARCH_CAT"] = $searchCat;
+$_SESSION["LAST_SEARCH"] = time();
 
 if ($_REQUEST['do'] == 'complete') {
 	$ar_matches = array();
@@ -15,10 +21,10 @@ if ($_REQUEST['do'] == 'complete') {
 	while ($row = @mysql_fetch_assoc($result)) {
 		$ar_matches[] = $row["TEXT"];
 	}
-	$query = "SELECT * FROM `download` WHERE TITLE LIKE '%".mysql_escape_string($_REQUEST['term'])."%'";
+	$query = "SELECT * FROM `download` WHERE MATCH TITLE AGAINST ('".mysql_escape_string($_REQUEST['term'])."')>1";
 	$result = @mysql_query($query);
 	while ($row = @mysql_fetch_assoc($result)) {
-		if (preg_match('/(^|\s)([a-z0-9äöü\-\_\.\,]*'.preg_quote($_REQUEST['term'], "/").'[a-z0-9äöü\-\_\.\,]*)($|\s)/i', $row["TITLE"], $ar_preg)) {
+		if (preg_match('/(^| )([a-z0-9äöü\-\_\.\,]*'.preg_quote($_REQUEST['term'], "/").'[a-z0-9äöü\-\_\.\,]*)($| )/i', $row["TITLE"], $ar_preg)) {
 			if (!in_array($ar_preg[2], $ar_matches)) {
 				$ar_matches[] = $ar_preg[2];
 			}
@@ -86,95 +92,110 @@ if ($search_started) {
 	</div>
 	<?php
 } else {
-?>
-<div class="ui-state-highlight ui-corner-all" style="margin: 2px; padding: 2px;">
-	<strong>Suchergebniss</strong> f&uuml;r die Suche
-	<?php
-		if (!empty($searchText)) {
-			echo 'nach "'.utf8_encode(htmlspecialchars($searchText)).'"';
-		}
-		if (!empty($searchCat)) {
-			$kat_names = array();
-			$kat_res = @mysql_query('SELECT NAME FROM `category` WHERE ID_CATEGORY IN ('.$searchCat.')');
-			while ($kat_row = @mysql_fetch_row($kat_res)) {
-				$kat_names[] = $kat_row[0];
-			}
-			echo 'in den Kategorien &quot;'.utf8_encode(htmlspecialchars(implode(", ",$kat_names))).'&quot;';
-		}
+	$cat = (!empty($searchCat) ? mysql_escape_string($searchCat) : "");
+	if (!empty($cat) || !empty($searchText)) {
 	?>
-</div>
-
-<table class="ui-widget ui-widget-content" style="width: 100%;" cellpadding="0" cellspacing="0">
-	<thead>
-		<tr class="ui-widget-header">
-			<th></th>
-			<th>Titel</th>
-			<th>Kategorien</th>
-			<th>Eingestellt am</th>
-			<th>Letztes Update</th>
-		</tr>
-	</thead>
-	<tbody>
-	<?php
-		/*
-		 * Display results
-		 */
-		$limit_page = ($_REQUEST['page'] ? $_REQUEST['page'] : 1);
-		$limit_count = 25;
-		$limit_start = ($limit_page - 1) * $limit_count;
-		$limit_downloads = 0;
-		// Search all categorys
-		$cat = (!empty($searchCat) ? mysql_escape_string($searchCat) : "");
-		$ar_where = array();
-		$ar_order = array();
-		if (!empty($cat)) {
-			$ar_where[] = "(SELECT count(*) FROM `download_cat` WHERE FK_DOWNLOAD=ID_DOWNLOAD AND FK_CATEGORY IN (".$cat."))=".count(explode(",",$cat));
-		}
-		if (!empty($searchText)) {
-			$ar_order[] = "FLOOR(MATCH `TITLE` AGAINST ('".mysql_escape_string($searchText)."')) DESC";
-			$ar_where[] = "( MATCH `TITLE` AGAINST ('".mysql_escape_string($searchText)."')".
-					(!empty($downloads) ? " OR ID_DOWNLOAD IN (".$downloads.") " : " ").")";
-		}
-		$ar_order[] = "STAMP_FOUND DESC";
-		$query = "SELECT SQL_CALC_FOUND_ROWS * FROM `download` WHERE ".implode(" AND ", $ar_where).
-			" ORDER BY ".implode(", ", $ar_order)." LIMIT ".$limit_start.",".$limit_count;
-		if ($result = mysql_query($query)) {
-			$ar_words = explode(" ", $searchText);
-			$ar_count = @mysql_fetch_row(@mysql_query("SELECT FOUND_ROWS()"));
-			if (!empty($ar_count)) {
-				$limit_downloads = (int)$ar_count[0];
-			}
-			$even = 0;
-			while($row = mysql_fetch_assoc($result)) {
-				$row["EVEN"] = $even;
-				$even = abs($even-1);
-				$row["TITLE_PLAIN"] = htmlspecialchars($row['TITLE']);
-				$row["TITLE_TEXT"] = htmlspecialchars( substr($row['TITLE'], 0, 48) ).(strlen($row['TITLE']) > 48 ? " [...]" : "");
-				$row["TITLE"] = $row["TITLE_PLAIN"];
-				foreach ($ar_words as $index => $word_plain) {
-					$word = htmlspecialchars($word_plain);
-					$row["TITLE"] = str_replace($word, "<strong>$word</strong>", $row["TITLE"]);
-					$row["TITLE_TEXT"] = str_replace($word, "<strong>$word</strong>", $row["TITLE_TEXT"]);
-				}
-				include 'search_row.php';
-			}
-		} else {
-		?>
-		<tr>
-			<td colspan="5">
-				<div class="ui-state-error">
-					Die Suche lieferte keine Ergebnisse!
-				</div>
-			</td>
-		</tr>
+	<div class="ui-state-highlight ui-corner-all" style="margin: 2px; padding: 2px;">
+		<strong>Suchergebniss</strong> f&uuml;r die Suche
 		<?php
-		}
-		$limit_pages = floor(($limit_downloads - 1) / $limit_count) + 1;
+			if (!empty($searchText)) {
+				echo 'nach "'.utf8_encode(htmlspecialchars($searchText)).'"';
+			}
+			if (!empty($searchCat)) {
+				$kat_names = array();
+				$kat_res = @mysql_query('SELECT NAME FROM `category` WHERE ID_CATEGORY IN ('.$searchCat.')');
+				while ($kat_row = @mysql_fetch_row($kat_res)) {
+					$kat_names[] = $kat_row[0];
+				}
+				echo 'in den Kategorien &quot;'.utf8_encode(htmlspecialchars(implode(", ",$kat_names))).'&quot;';
+			}
+		?>
+	</div>
+	<?php
+	}
 	?>
-	</tbody>
-</table>
-<?php
-$page = (empty($_REQUEST["for"]) ? "search" : $_REQUEST["for"]);
-include("pager_search.php");
+
+	<table class="ui-widget ui-widget-content" style="width: 100%;" cellpadding="0" cellspacing="0">
+		<thead>
+			<tr class="ui-widget-header">
+				<th></th>
+				<th>Titel</th>
+				<th>Kategorien</th>
+				<th>Eingestellt am</th>
+				<th>Letztes Update</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php
+		if (!empty($cat) || !empty($searchText)) {
+			echo("<tbody>");
+			/*
+			 * Display results
+			 */
+			$limit_page = ($_REQUEST['page'] ? $_REQUEST['page'] : 1);
+			$limit_count = (empty($_REQUEST['rows']) ? 25 : $_REQUEST['rows']);
+			$limit_start = ($limit_page - 1) * $limit_count;
+			$limit_downloads = 0;
+			// Search all categorys
+			$ar_join = array();
+			$ar_where = array();
+			$ar_order = array();
+			if (!empty($cat)) {
+				$ar_cats = explode(",", $cat);
+				foreach ($ar_cats as $index => $id_cat) {
+					$ar_join[] = "LEFT JOIN `download_cat` c".$index." ON c".$index.".FK_DOWNLOAD=".
+						($index == 0 ? "d.ID_DOWNLOAD" : "c".($index-1).".FK_DOWNLOAD");
+					$ar_where[] = "c".$index.".FK_CATEGORY=".$id_cat;
+				}
+			}
+			if (!empty($searchText)) {
+				$ar_order[] = "MATCH d.`TITLE` AGAINST ('".mysql_escape_string($searchText)."') DESC";
+				$ar_where[] = "( MATCH d.`TITLE` AGAINST ('".mysql_escape_string($searchText)."') > 1".
+						(!empty($downloads) ? " OR d.ID_DOWNLOAD IN (".$downloads.") " : " ").")";
+			}
+			$ar_order[] = "d.STAMP_FOUND DESC";
+			$query = "SELECT SQL_CALC_FOUND_ROWS d.* FROM `download` d ".implode(" ", $ar_join)." WHERE ".implode(" AND ", $ar_where).
+				" ORDER BY ".implode(", ", $ar_order)." LIMIT ".$limit_start.",".$limit_count;
+			if ($result = mysql_query($query)) {
+				$ar_words = explode(" ", $searchText);
+				$ar_count = @mysql_fetch_row(@mysql_query("SELECT FOUND_ROWS()"));
+				if (!empty($ar_count)) {
+					$limit_downloads = (int)$ar_count[0];
+				}
+				$even = 0;
+				while($row = mysql_fetch_assoc($result)) {
+					$row["EVEN"] = $even;
+					$even = abs($even-1);
+					$row["TITLE_MAX"] = (!empty($_REQUEST['length']) ? $_REQUEST['length'] : 30);
+					$row["TITLE_PLAIN"] = htmlspecialchars($row['TITLE']);
+					$row["TITLE_TEXT"] = htmlspecialchars( substr($row['TITLE'], 0, $row["TITLE_MAX"]) ).(strlen($row['TITLE']) > $row["TITLE_MAX"] ? " [...]" : "");
+					$row["TITLE"] = $row["TITLE_PLAIN"];
+					foreach ($ar_words as $index => $word_plain) {
+						$word = htmlspecialchars($word_plain);
+						$row["TITLE"] = str_replace($word, "<strong>$word</strong>", $row["TITLE"]);
+						$row["TITLE_TEXT"] = str_replace($word, "<strong>$word</strong>", $row["TITLE_TEXT"]);
+					}
+					include 'search_row.php';
+				}
+			} else {
+			?>
+			<tr>
+				<td colspan="5">
+					<div class="ui-state-error">
+						Die Suche lieferte keine Ergebnisse!
+					</div>
+				</td>
+			</tr>
+			<?php
+			}
+			$limit_pages = floor(($limit_downloads - 1) / $limit_count) + 1;
+			echo("</tbody>");
+		}
+		?>
+		</tbody>
+	</table>
+	<?php
+	$page = (empty($_REQUEST["for"]) ? "search" : $_REQUEST["for"]);
+	include("pager_search.php");
 }
 ?>

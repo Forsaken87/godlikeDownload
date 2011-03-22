@@ -72,8 +72,8 @@ class FilterSerienJunkies implements LinkFilter {
 		$source = file_get_contents($url, false, $context);
 		$dom_result = new DOMDocument();
 		if (@$dom_result->loadHTML($source)) {
-			$linksKey = "";
-			$linksCrypted = "";
+			$linksKey = false;
+			$linksCrypted = false;
 			$inputList = $dom_result->getElementsByTagName("input");
 			for ($i = 0; $i < $inputList->length; $i++) {
 				$inputCur = $inputList->item($i);
@@ -88,7 +88,7 @@ class FilterSerienJunkies implements LinkFilter {
 					}
 				}
 			}
-			if (!empty($linksKey) && !empty($linksCrypted)) {
+			if (($linksKey !== false) && ($linksCrypted !== false)) {
 				$key=$this->base16Decode($linksKey);
 				$crypted=base64_decode($linksCrypted);
 				$cp = mcrypt_module_open(MCRYPT_RIJNDAEL_128, '', 'cbc', '');

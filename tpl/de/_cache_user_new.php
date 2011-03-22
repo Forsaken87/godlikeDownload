@@ -1,5 +1,6 @@
 <?php
-if (!isUser()) die(header("location: index.php?show=login"));
+
+global $id_user;
 
 $max_id = 0;
 $max_id_global = get_query_field("SELECT MAX(ID_DOWNLOAD_LINK) FROM `download_link`");
@@ -26,37 +27,39 @@ $(function() {
 	<tbody>
 	<?php
 		$ar_cats_ignored = array();
-		$query = "SELECT * FROM `user_ignore` WHERE FK_USER=".$_SESSION['user']['ID_USER'];
+		$query = "SELECT * FROM `user_ignore` WHERE FK_USER=".$id_user;
 		$result = @mysql_query($query);
-		$id_group = null;
 		while ($row = @mysql_fetch_assoc($result)) {
 			$ar_cats_ignored[] = $row["FK_CATEGORY"];
 		}
 		$queryJoinIgnored = "";
 		$queryWhereIgnored = "";
 		if (!empty($ar_cats_ignored)) {
-			 $queryJoinIgnored .= "	LEFT JOIN `download_cat` dc1 ON d.ID_DOWNLOAD=dc1.FK_DOWNLOAD AND ".
-			 	"dc1.FK_CATEGORY IN (".implode(",",$ar_cats_ignored).")\n".
-			 	"	LEFT JOIN `category` c1 ON c1.ID_CATEGORY=dc1.FK_CATEGORY AND c1.FK_CATEGORY_GROUP=1\n";
-			 $queryJoinIgnored .= "	LEFT JOIN `download_cat` dc2 ON d.ID_DOWNLOAD=dc2.FK_DOWNLOAD AND ".
-			 	"dc2.FK_CATEGORY NOT IN (".implode(",",$ar_cats_ignored).")\n".
-			 	"	LEFT JOIN `category` c2 ON c2.ID_CATEGORY=dc2.FK_CATEGORY AND c2.FK_CATEGORY_GROUP=2\n";
-			 $queryWhereIgnored = " AND dc1.FK_CATEGORY IS NULL AND dc2.FK_CATEGORY IS NOT NULL";
+			$queryCategorys = "SELECT * FROM `category` WHERE ID_CATEGORY NOT IN (".implode(",",$ar_cats_ignored).")";
+			$result = @mysql_query($queryCategorys);
+			$ar_cats = array();
+			while ($row = @mysql_fetch_assoc($result)) {
+				$id_group = $row["FK_CATEGORY_GROUP"];
+				if (empty($ar_cats[$id_group])) $ar_cats[$id_group] = array();
+				$ar_cats[$id_group][] = $row["ID_CATEGORY"];
+			}
+			$queryWhereIgnored = " AND dc.FK_CATEGORY IN (".implode(",",array_merge($ar_cats[1], $ar_cats[2])).")\n";
 		}
-		$query = 	"SELECT d.* \n".
+		$query =	"SELECT d.*\n".
 					"FROM `download` d\n".
-					$queryJoinIgnored."\n".
-					"WHERE d.STAMP_UPDATE IS NOT NULL".$queryWhereIgnored."\n".
+					"	LEFT JOIN `download_cat` dc ON d.ID_DOWNLOAD=dc.FK_DOWNLOAD\n".
+					"WHERE d.STAMP_FOUND>DATE_SUB(CURDATE(), interval 1 day)".$queryWhereIgnored.
 					"GROUP BY d.ID_DOWNLOAD\n".
-					"ORDER BY d.STAMP_FOUND DESC, d.STAMP_UPDATE DESC LIMIT ".(empty($_REQUEST['rows']) ? 15 : $_REQUEST['rows']);
+					"ORDER BY d.STAMP_UPDATE DESC, d.STAMP_UPDATE DESC\n".
+					"LIMIT 100";
 		if ($result = @mysql_query($query)) {
 			$count = get_query_field("SELECT FOUND_ROWS()");
 			$even = 0;
 			while ($row = @mysql_fetch_assoc($result)) {
 				$row["EVEN"] = $even;
-				$row["TITLE_MAX"] = (!empty($_REQUEST['length']) ? $_REQUEST['length'] : 30);
+				$row["TITLE_MAX"] = (!empty($_REQUEST['length']) ? $_REQUEST['length'] : 40);
 				$even = abs($even-1);
-				include 'ajax_downloads_new_row.php';
+				include '_cache_user_new_row.php';
 			}
 		}
 	?>
