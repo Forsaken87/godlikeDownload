@@ -64,7 +64,7 @@ function updateDownload($ar_download) {
 			(empty($ar_download["STAMP_FOUND"]) ? "CURDATE()" : "'".mysql_escape_string($ar_download["STAMP_FOUND"])."'").", ".
 			(empty($ar_download["DOWNLOAD"]) ? "NULL" : "NOW()").") ".
 		"ON DUPLICATE KEY UPDATE `TITLE`='".mysql_escape_string($ar_download['TITLE'])."', `DESC`='".mysql_escape_string($ar_download['DESC'])."', ".
-			"`STAMP_UPDATE`=".(empty($ar_download["DOWNLOAD"]) ? "NULL" : "NOW()").", `UPDATING`=0 ".
+			"`STAMP_UPDATE`=".(empty($ar_download["DOWNLOAD"]) ? "NULL" : "IF(STAMP_UPDATE<DATE_SUB(NOW(), interval 1 day),NOW(),STAMP_UPDATE)").", `UPDATING`=0 ".
 			(!empty($ar_download["STAMP_FOUND"]) ? ", `STAMP_FOUND`='".mysql_escape_string($ar_download["STAMP_FOUND"])."'" : "");
 	$result = @mysql_query($query);
 	if ($result === false) {

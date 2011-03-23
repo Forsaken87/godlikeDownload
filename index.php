@@ -68,8 +68,8 @@ $skin = str_replace("{lang}", $lang, $skin);
 $skin = str_replace("{infobar}", get_page("infobar", $lang), $skin);
 // Get navigation
 $skin = str_replace("{nav}", get_nav($ar_nav), $skin);
-$skin = str_replace("{nav_index}", $page_index, $skin);
-$skin = str_replace("{nav_id}", $page_index+1, $skin);
+$skin = str_replace("{nav_index}", (isset($page_index) ? $page_index : -1), $skin);
+$skin = str_replace("{nav_id}", (isset($page_index) ? $page_index+1 : 0), $skin);
 // Get content
 $skin = str_replace("{content}", get_page($page, $lang), $skin);
 
