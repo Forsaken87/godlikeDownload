@@ -4,7 +4,7 @@ if (!isUser()) die(header("location: index.php?show=login"));
 $filename = "cache/user_new/".$_SESSION['user']['ID_USER'].".htm";
 
 if (!file_exists($filename)) {
-	echo "<h1>Cache wird erzeugt, kann bis zu 10 Minuten dauern.</h1>";
+	echo "<h1>Cache wird erzeugt, kann bis zu 60 Sekunden dauern.</h1>";
 	?>
 	<script type="text/javascript">
 		window.setTimeout(function() {

@@ -43,12 +43,18 @@ $(function() {
 				if (empty($ar_cats[$id_group])) $ar_cats[$id_group] = array();
 				$ar_cats[$id_group][] = $row["ID_CATEGORY"];
 			}
-			$queryWhereIgnored = " AND dc.FK_CATEGORY IN (".implode(",",array_merge($ar_cats[1], $ar_cats[2])).")\n";
+			if (!empty($ar_cats[1])) {
+				$queryJoinIgnored .= "	LEFT JOIN `download_cat` dc1 ON d.ID_DOWNLOAD=dc1.FK_DOWNLOAD\n";
+				$queryWhereIgnored .= " AND dc1.FK_CATEGORY IN (".implode(",",$ar_cats[1]).")";
+			}
+			if (!empty($ar_cats[2])) {
+				$queryJoinIgnored .= "	LEFT JOIN `download_cat` dc2 ON d.ID_DOWNLOAD=dc2.FK_DOWNLOAD\n";
+				$queryWhereIgnored .= " AND dc2.FK_CATEGORY IN (".implode(",",$ar_cats[2]).")";
+			}
 		}
 		$query =	"SELECT d.*\n".
-					"FROM `download` d\n".
-					"	LEFT JOIN `download_cat` dc ON d.ID_DOWNLOAD=dc.FK_DOWNLOAD\n".
-					"WHERE d.STAMP_FOUND>DATE_SUB(CURDATE(), interval 3 day)".$queryWhereIgnored.
+					"FROM `download` d\n".$queryJoinIgnored.
+					"WHERE d.STAMP_FOUND>DATE_SUB(CURDATE(), interval 3 day)".$queryWhereIgnored."\n".
 					"GROUP BY d.ID_DOWNLOAD\n".
 					"ORDER BY d.STAMP_FOUND DESC, d.STAMP_UPDATE DESC\n".
 					"LIMIT 400";
