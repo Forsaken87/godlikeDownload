@@ -113,16 +113,13 @@ function ShowSeries(id) {
 </div>
 <div id="series_list" class="ui-widget ui-widget-content" style="position: fixed; left: 16px; top: 128px; bottom: 16px; right: 75%; margin-right: 4px; overflow: auto;">
 	<?php
-		$query = "SELECT c.*, count(dc.FK_DOWNLOAD) AS DL_COUNT\n".
+		$query = "SELECT c.*\n".
 			"FROM `category` c \n".
-			"	LEFT JOIN `download_cat` dc ON dc.FK_CATEGORY=c.ID_CATEGORY \n".
 			"WHERE c.FK_CATEGORY_GROUP=5\n".
 			"GROUP BY c.ID_CATEGORY ORDER BY c.NAME ASC";
 		$result = @mysql_query($query);
 		while ($row = @mysql_fetch_assoc($result)) {
-			if ($row["DL_COUNT"] > 0) {
-				include("series_row.php");
-			}
+			include("series_row.php");
 		}
 	?>
 </div>
