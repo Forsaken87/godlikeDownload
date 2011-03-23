@@ -70,26 +70,14 @@ var last_search = "";
 
 function UpdateFilter(input) {
 	var search = input.value.toLowerCase();
-	if (last_search.length < search.length) {
-		$("#series_list a.seriesEntry:visible").each(function() {
-			var title = $(this).children("div span:first").html().toLowerCase();
-			if (title.indexOf(search) >= 0) {
-				$(this).show();
-			} else {
-				$(this).hide();
-			}
-		});
-	} else if (search != last_search) {
-		$("#series_list a.seriesEntry").each(function() {
-			var title = $(this).children("div span:first").html().toLowerCase();
-			if (title.indexOf(search) >= 0) {
-				$(this).show();
-			} else {
-				$(this).hide();
-			}
-		});
-	}
-	last_search = search;
+	$("#series_list div.seriesEntry").each(function() {
+		var title = $(this).html().toLowerCase();
+		if (title.indexOf(search) >= 0) {
+			$(this).show();
+		} else {
+			$(this).hide();
+		}
+	});
 }
 
 function UpdateManualSeries(idDownload, id) {
